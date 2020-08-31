@@ -6,20 +6,334 @@ LGUI::Sprite* figuresWhite[8];
 LGUI::Sprite* pawnsBlack[8];
 LGUI::Sprite* figuresBlack[8];
 
+SDL_Point lastPositions[32] = {0};
+
+bool alive[32] = {1};
+
+int movements[32] = {0};
+
+bool whiteMoves = true;
+
+int figurAt(int x, int y)
+{
+    for(int i = 0; i < 32; i++)
+    {
+        if(lastPositions[i].x/100 == x && lastPositions[i].y/100 == y)
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
+bool isValidMove(int id, int x, int y, int lastX, int lastY, LGUI::Window* window)
+{
+    if(id>=8 && id < 16 && y < lastY && whiteMoves) //Pawn (bottom) forward
+    {
+        int target = figurAt(x, y);
+        if(target != -1)
+        {
+            if(target >= 16 && (x-1 == lastX || x+1 == lastX)) //Enemy front left or right
+            {
+                alive[target] = false;
+                lastPositions[target].x = 50*target-800;
+                lastPositions[target].y = 925;
+                window->getComponent(target)->setPosition(50*target-800, 925);
+                movements[id]++;
+                whiteMoves = !whiteMoves;
+                return true;
+            }
+        }
+        else if(x == lastX && (movements[id] == 0 && y >= lastY - 2 || y >= lastY - 1))
+        {
+            movements[id]++;
+            whiteMoves = !whiteMoves;
+            return true;
+        }
+    }
+    else if(id>=16 && id < 24 && y > lastY &&!whiteMoves) //Pawn (top) forward
+    {
+        int target = figurAt(x, y);
+        if(target != -1)
+        {
+            if(target < 16 && (x-1 == lastX || x+1 == lastX)) //Enemy front left or right
+            {
+                alive[target] = false;
+                lastPositions[target].x = 50*target-300;
+                lastPositions[target].y = 25;
+                window->getComponent(target)->setPosition(50*target-300, 25);
+                movements[id]++;
+                whiteMoves = !whiteMoves;
+                return true;
+            }
+        }
+        else if(x == lastX && (movements[id] == 0 && y <= lastY + 2 || y <= lastY + 1))
+        {
+            movements[id]++;
+            whiteMoves = !whiteMoves;
+            return true;
+        }
+    }
+    else if(id >= 0 && id < 8 && whiteMoves) // White figures
+    {
+        int target = figurAt(x, y);
+        if(id == 0 || id == 7)//      Rook
+        {
+            if(x == lastX || y == lastY)
+            {
+                if(sqrtf((x-lastX)*(x-lastX)+(y-lastY)*(y-lastY)) > 1)
+                {
+                    if(x == lastX)
+                    {
+                        int tmpc = y;
+                        if(y < lastY)
+                        {
+                            tmpc++;
+                            while (tmpc != lastY && tmpc != y)
+                            {
+                                if(figurAt(x, tmpc) != -1)
+                                {
+                                    return false;
+                                }
+                                tmpc++;
+                            }
+                        }
+                        else
+                        {
+                            tmpc--;
+                            while (tmpc != lastY && tmpc != y)
+                            {
+                                if(figurAt(x, tmpc) != -1)
+                                {
+                                    return false;
+                                }
+                                tmpc--;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        int tmpc = x;
+                        if(x < lastX)
+                        {
+                            tmpc++;
+                            while (tmpc != lastX && tmpc != x)
+                            {
+                                if(figurAt(tmpc, y) != -1)
+                                {
+                                    return false;
+                                }
+                                tmpc++;
+                            }
+                        }
+                        else
+                        {
+                            tmpc--;
+                            while (tmpc != lastX && tmpc != x)
+                            {
+                                if(figurAt(tmpc, y) != -1)
+                                {
+                                    return false;
+                                }
+                                tmpc--;
+                            }
+                        }
+                    }
+                }
+                if(target != -1)
+                {
+                    if(target >= 16)
+                    {
+                        alive[target] = false;
+                        lastPositions[target].x = 50*target-800;
+                        lastPositions[target].y = 925;
+                        window->getComponent(target)->setPosition(50*target-800, 925);
+                        movements[id]++;
+                        whiteMoves = !whiteMoves;
+                        return true;
+                    }
+                }
+                else
+                {
+                    movements[id]++;
+                    whiteMoves = !whiteMoves;
+                    return true;
+                }
+            }
+        }
+        else if(id == 1 || id == 6)// Knight
+        {
+
+        }
+        else if(id == 2 || id == 5)// Bishop
+        {
+
+        }
+        else if(id == 3) //           Queen
+        {
+
+        }
+        else //                       King
+        {
+
+        }
+    }
+    else if(id < 32 && !whiteMoves) // Black figures
+    {
+        int target = figurAt(x, y);
+        if(id == 24 || id == 31)//      Rook
+        {
+            if(x == lastX || y == lastY)
+            {
+                if(sqrtf((x-lastX)*(x-lastX)+(y-lastY)*(y-lastY)) > 1)
+                {
+                    if(x == lastX)
+                    {
+                        int tmpc = y;
+                        if(y < lastY)
+                        {
+                            tmpc++;
+                            while (tmpc != lastY && tmpc != y)
+                            {
+                                if(figurAt(x, tmpc) != -1)
+                                {
+                                    return false;
+                                }
+                                tmpc++;
+                            }
+                        }
+                        else
+                        {
+                            tmpc--;
+                            while (tmpc != lastY && tmpc != y)
+                            {
+                                if(figurAt(x, tmpc) != -1)
+                                {
+                                    return false;
+                                }
+                                tmpc--;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        int tmpc = x;
+                        if(x < lastX)
+                        {
+                            tmpc++;
+                            while (tmpc != lastX && tmpc != x)
+                            {
+                                if(figurAt(tmpc, y) != -1)
+                                {
+                                    return false;
+                                }
+                                tmpc++;
+                            }
+                        }
+                        else
+                        {
+                            tmpc--;
+                            while (tmpc != lastX && tmpc != x)
+                            {
+                                if(figurAt(tmpc, y) != -1)
+                                {
+                                    return false;
+                                }
+                                tmpc--;
+                            }
+                        }
+                    }
+                }
+                if(target != -1)
+                {
+                    if(target < 16)
+                    {
+                        alive[target] = false;
+                        lastPositions[target].x = 50*target-300;
+                        lastPositions[target].y = 25;
+                        window->getComponent(target)->setPosition(50*target-300, 25);
+                        movements[id]++;
+                        whiteMoves = !whiteMoves;
+                        return true;
+                    }
+                }
+                else
+                {
+                    movements[id]++;
+                    whiteMoves = !whiteMoves;
+                    return true;
+                }
+            }
+        }
+        else if(id == 25 || id == 30)// Knight
+        {
+
+        }
+        else if(id == 26 || id == 29)// Bishop
+        {
+
+        }
+        else if(id == 28) //            Queen
+        {
+
+        }
+        else //                         King
+        {
+
+        }
+    }
+    return false;
+}
+
+void figureToGrid(void** params)
+{
+    LGUI::Sprite* sprite = (LGUI::Sprite*)params[1];
+    LGUI::Window* window = (LGUI::Window*)params[0];
+    SDL_Event* motionEvent = (SDL_Event*)params[2];
+    if(sprite->getLastMouseX() >= 120 && sprite->getLastMouseY() >= 120)
+    {
+        SDL_Rect pos = sprite->getPosition();
+        int w = pos.x/100;
+        int h = pos.y/100;
+
+
+        if(isValidMove(sprite->getId(), w, h, lastPositions[sprite->getId()].x/100, lastPositions[sprite->getId()].y/100, window) && pos.x + 20 < 900 && pos.y + 20 < 900)
+        {
+            if(sprite->getId() >= 8 && sprite->getId() < 24 )
+            {
+                sprite->setPosition(7 + w*100, h*100, false, window);
+            }
+            else
+            {
+                sprite->setPosition(w*100, h*100, false, window);
+            }
+        }
+        else
+        {
+            sprite->setPosition(lastPositions[sprite->getId()].x, lastPositions[sprite->getId()].y, true, window);
+        }
+        lastPositions[sprite->getId()].x = sprite->getPosition().x;
+        lastPositions[sprite->getId()].y = sprite->getPosition().y;
+        //sprite->setLastCursorPosition(pos.x, pos.y);
+    }
+}
+
 void moveFigure(void** params)
 {
     LGUI::Sprite* sprite = (LGUI::Sprite*)params[1];
     LGUI::Window* window = (LGUI::Window*)params[0];
     SDL_Event* motionEvent = (SDL_Event*)params[2];
-    if(sprite->isLeftButtonDown() && sprite->getLastMouseX() >= 0 && sprite->getLastMouseY() >= 0)
+    if(sprite->isLeftButtonDown() && sprite->getLastMouseX() > 135 && sprite->getLastMouseY() > 135)
     {
         int mx = motionEvent->motion.x - sprite->getLastMouseX();
         int my = motionEvent->motion.y - sprite->getLastMouseY();
-
         SDL_Rect pos = sprite->getPosition();
         pos.x += mx;
         pos.y += my;
-        sprite->setPosition(pos.x, pos.y, window);
+        if(pos.x + 35 < 900 && pos.y + 35 < 900)
+        {
+            sprite->setPosition(pos.x, pos.y, window);
+        }
         //sprite->setLastCursorPosition(pos.x, pos.y);
     }
 
@@ -27,7 +341,7 @@ void moveFigure(void** params)
 
 void resetGame(void** params)
 {
-    LGUI::Button* button = (LGUI::Button*)params[1];
+    whiteMoves = true;
     LGUI::Window* window = (LGUI::Window*)params[0];
     for(int i = 0; i < 8; i++)
     {
@@ -40,12 +354,19 @@ void resetGame(void** params)
         figuresBlack[i]->setPosition(100 + i*100,100,false);
         figuresBlack[i]->setBorder(LGUI::RGBA(0,0,0,255), 0);
     }
+    for(int i = 0; i < 32; i++)
+    {
+        alive[i] = true;
+        movements[i] = 0;
+        lastPositions[i].x = window->getComponent(i)->getPosition().x;
+        lastPositions[i].y = window->getComponent(i)->getPosition().y;
+    }
 }
 
 int main(int args, char** arg)
 {
     std::string title = "Light GUI - Chess (by BeatEngine®)";
-    LGUI::Window window(title, 1000, 1000);
+    LGUI::Window window(title, 1000, 1000, true);
 
     std::string abso = "./";
     abso = "/home/david/Dokumente/SDL-Projects/Chess/";
@@ -79,7 +400,9 @@ int main(int args, char** arg)
     LGUI::Button* resetButton = new LGUI::Button(400, 50, 200, 30, "Reset", LGUI::RGBA(220, 220, 220, 255), LGUI::RGBA(70, 70, 70, 255), &window, 20);
 
     resetButton->setOnLeftClick(resetGame);
-
+    background->setId(500);
+    box->setId(501);
+    resetButton->setId(502);
     window.addComponent(background);
     window.addComponent(box);
     window.addComponent(resetButton);
@@ -88,26 +411,45 @@ int main(int args, char** arg)
         pawnsWhite[i] = new LGUI::Sprite(100, 100,50,50,LGUI::RGBA(0,0,0,255),&window, "/home/david/Dokumente/SDL-Projects/Chess/res/white/pawn.png");
         pawnsWhite[i]->setPosition(107 + i*100,700,false);
         pawnsWhite[i]->setBorder(LGUI::RGBA(0,0,0,255), 0);
+        pawnsWhite[i]->setId(i+8);
         figuresWhite[i]->setPosition(100 + i*100,800,false);
         figuresWhite[i]->setBorder(LGUI::RGBA(0,0,0,255), 0);
+        figuresWhite[i]->setId(i);
         pawnsBlack[i] = new LGUI::Sprite(100, 100,50,50,LGUI::RGBA(0,0,0,255),&window, "/home/david/Dokumente/SDL-Projects/Chess/res/black/pawn.png");
         pawnsBlack[i]->setPosition(107 + i*100,200,false);
         pawnsBlack[i]->setBorder(LGUI::RGBA(0,0,0,255), 0);
+        pawnsBlack[i]->setId(i+16);
         figuresBlack[i]->setPosition(100 + i*100,100,false);
         figuresBlack[i]->setBorder(LGUI::RGBA(0,0,0,255), 0);
+        figuresBlack[i]->setId(i+24);
         pawnsWhite[i]->setOnMouseMove(moveFigure);
         pawnsBlack[i]->setOnMouseMove(moveFigure);
         figuresWhite[i]->setOnMouseMove(moveFigure);
         figuresBlack[i]->setOnMouseMove(moveFigure);
+        pawnsWhite[i]->setOnMouseLeft(figureToGrid);
+        pawnsBlack[i]->setOnMouseLeft(figureToGrid);
+        figuresWhite[i]->setOnMouseLeft(figureToGrid);
+        figuresBlack[i]->setOnMouseLeft(figureToGrid);
         window.addComponent(pawnsWhite[i]);
         window.addComponent(figuresWhite[i]);
         window.addComponent(pawnsBlack[i]);
         window.addComponent(figuresBlack[i]);
     }
+    LGUI::Window* wptr = &window;
+    resetGame((void**)(&wptr));
+
+    window.setBackgroundColor(LGUI::RGBA(100, 100, 100, 0));
 
     while (window.update()) //window main loop
     {
-        
+        if(whiteMoves)
+        {
+            window.setBackgroundColor(LGUI::RGBA(160, 160, 160, 0));
+        }
+        else
+        {
+            window.setBackgroundColor(LGUI::RGBA(100, 100, 100, 0));
+        }
         window.updateScreen();
     }
 

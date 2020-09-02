@@ -742,6 +742,10 @@ float valueOfMove(int id, int x, int y, int lastX, int lastY, LGUI::Window* wind
 
 bool isValidMove(int id, int x, int y, int lastX, int lastY, LGUI::Window* window, bool execute = true)
 {
+    if(alive[id] == 0)
+    {
+        return false;
+    }
     if(x == 0 || y == 0)
     {
         return false;

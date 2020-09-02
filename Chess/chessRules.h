@@ -50,19 +50,19 @@ static const char* nameOfFigure(int id)
     }
     else
     {
-        if(id == 0 || id == 7)
+        if(id == 24 || id == 31)
         {
             return (const char*)"Black rook";
         }
-        else if(id == 1 || id == 6)
+        else if(id == 25 || id == 30)
         {
             return (const char*)"Black knight";
         }
-        else if(id == 2 || id == 5)
+        else if(id == 26 || id == 29)
         {
             return (const char*)"Black bishop";
         }
-        else if(id == 3)
+        else if(id == 28)
         {
             return (const char*)"Black Queen";
         }
@@ -160,12 +160,12 @@ float valueOfMove(int id, int x, int y, int lastX, int lastY, LGUI::Window* wind
         int target = figurAt(x, y);
         if(target != -1)
         {
-            if(target >= 16 && (x-1 == lastX || x+1 == lastX)) //Enemy front left or right
+            if(target >= 16 && (x-1 == lastX || x+1 == lastX) && y == lastY - 1) //Enemy front left or right
             {
                 return valueOfFigure(target);
             }
         }
-        else if(x == lastX && (movements[id] == 0 && y >= lastY - 2 || y >= lastY - 1))
+        else if(x == lastX && (movements[id] == 0 && y == lastY - 2 || y == lastY - 1))
         {
             return 0;
         }
@@ -175,12 +175,12 @@ float valueOfMove(int id, int x, int y, int lastX, int lastY, LGUI::Window* wind
         int target = figurAt(x, y);
         if(target != -1)
         {
-            if(target < 16 && (x-1 == lastX || x+1 == lastX)) //Enemy front left or right
+            if(target < 16 && (x-1 == lastX || x+1 == lastX) && y == lastY + 1) //Enemy front left or right
             {
                 return valueOfFigure(target);
             }
         }
-        else if(x == lastX && (movements[id] == 0 && y <= lastY + 2 || y <= lastY + 1))
+        else if(x == lastX && (movements[id] == 0 && y == lastY + 2 || y == lastY + 1))
         {
             return 0;
         }
@@ -742,6 +742,10 @@ float valueOfMove(int id, int x, int y, int lastX, int lastY, LGUI::Window* wind
 
 bool isValidMove(int id, int x, int y, int lastX, int lastY, LGUI::Window* window, bool execute = true)
 {
+    if(x == 0 || y == 0)
+    {
+        return false;
+    }
     if(id>=8 && id < 16 && y < lastY && whiteMoves) //Pawn (bottom) forward
     {
         int target = figurAt(x, y);

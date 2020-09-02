@@ -27,6 +27,7 @@ void figureToGrid(void** params)
 
         if(pos.x + 20 < 900 && pos.y + 20 < 900 && isValidMove(sprite->getId(), w, h, lastPositions[sprite->getId()].x/100, lastPositions[sprite->getId()].y/100, window, false))
         {
+            printf("Move %s (%d|%d)-->(%d|%d) from %c%c to %c%c \n", nameOfFigure(sprite->getId()), lastPositions[sprite->getId()].x/100, lastPositions[sprite->getId()].y/100, w, h, 'a' + lastPositions[sprite->getId()].x/100-1,'0' + 9-lastPositions[sprite->getId()].y/100, 'a' + w-1,'0' + 9-h);
             if(isValidMove(sprite->getId(), w, h, lastPositions[sprite->getId()].x/100, lastPositions[sprite->getId()].y/100, window, true))
             {
                 if(sprite->getId() >= 8 && sprite->getId() < 24 )
@@ -188,11 +189,75 @@ bool cmpcmovs(ChessMove& a, ChessMove& b)
     return a.value > b.value;
 }
 
-
+void artificicialEnemy(LGUI::Window* window)
+{
+    if(computerActive && (computerSideBlack && !whiteMoves || !computerSideBlack && whiteMoves))
+    {
+        std::vector<ChessMove> moves;
+        int a = 0;
+        int b = 16;
+        if(computerSideBlack)
+        {
+            a = 16;
+            b = 32;
+        }
+        for(int id = a; id < b; id++)
+        {
+            for(int y = 0; y < 32; y++)
+            {
+                for(int x = 0; x < 32; x++)
+                {
+                    if(isValidMove(id, x, y, lastPositions[id].x / 100, lastPositions[id].y / 100, window, false))
+                    {
+                        ChessMove tmp;
+                        tmp.id = id;
+                        tmp.x = x;
+                        tmp.y = y;
+                        tmp.value = valueOfMove(id, x, y, lastPositions[id].x / 100, lastPositions[id].y / 100, window);
+                        if(tmp.value > -100000)
+                        {
+                            moves.push_back(tmp);
+                        }
+                    }
+                }
+            }
+        }
+        if(moves.size() > 0)
+        {
+            ChessMove max;
+            max.value = -1000000.0f;
+            for(int i = 0; i < moves.size(); i++)
+            {
+                if(moves[i].value > max.value)
+                {
+                    max = moves[i];
+                }
+            }
+            printf("Move %s (%d|%d)-->(%d|%d) from %c%c to %c%c \n", nameOfFigure(max.id), lastPositions[max.id].x/100, lastPositions[max.id].y/100, max.x, max.y, 'a' + lastPositions[max.id].x/100-1,'0' + 9-lastPositions[max.id].y/100, 'a' + max.x-1,'0' + 9-max.y);
+            if(isValidMove(max.id, max.x, max.y, lastPositions[max.id].x/100, lastPositions[max.id].y/100,window, true))
+            {
+                //printf("Error computer tried invalid move!\n");
+            }
+            LGUI::Sprite* sprite = (LGUI::Sprite*)window->getComponent(max.id);
+            if(sprite->getId() >= 8 && sprite->getId() < 24 )
+            {
+                sprite->setPosition(7 + max.x*100, max.y*100, false, window);
+            }
+            else
+            {
+                sprite->setPosition(max.x*100, max.y*100, false, window);
+            }
+            lastPositions[sprite->getId()].x = sprite->getPosition().x;
+            lastPositions[sprite->getId()].y = sprite->getPosition().y;
+        }
+    }
+}
 
 
 void computerPlayerTasks(LGUI::Window* window)
 {
+    artificicialEnemy(window);
+    /*
     if(computerActive && (computerSideBlack && !whiteMoves || !computerSideBlack && whiteMoves))
     {
         std::vector<ChessMove> moves;
@@ -254,7 +319,7 @@ void computerPlayerTasks(LGUI::Window* window)
                 }
             }
         }
-    }
+    }*/
 }
 
 int main(int args, char** arg)

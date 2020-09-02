@@ -26,6 +26,15 @@ int figurAt(int x, int y)
     return -1;
 }
 
+inline static int positive(int x)
+{
+    if(x < 0)
+    {
+        return -x;
+    }
+    return x;
+}
+
 bool isValidMove(int id, int x, int y, int lastX, int lastY, LGUI::Window* window)
 {
     if(id>=8 && id < 16 && y < lastY && whiteMoves) //Pawn (bottom) forward
@@ -81,7 +90,7 @@ bool isValidMove(int id, int x, int y, int lastX, int lastY, LGUI::Window* windo
         {
             if(x == lastX || y == lastY)
             {
-                if(sqrtf((x-lastX)*(x-lastX)+(y-lastY)*(y-lastY)) > 1)
+                if(sqrtf((x-lastX)*(x-lastX)+(y-lastY)*(y-lastY)) >= 1)
                 {
                     if(x == lastX)
                     {
@@ -163,19 +172,233 @@ bool isValidMove(int id, int x, int y, int lastX, int lastY, LGUI::Window* windo
         }
         else if(id == 1 || id == 6)// Knight
         {
-
+            if(positive(x-lastX) == 1 && positive(y-lastY) == 2 || positive(y-lastY) == 1 && positive(x-lastX) == 2 )
+            {
+                if(target != -1)
+                {
+                    if(target >= 16)
+                    {
+                        alive[target] = false;
+                        lastPositions[target].x = 50*target-800;
+                        lastPositions[target].y = 925;
+                        window->getComponent(target)->setPosition(50*target-800, 925);
+                        movements[id]++;
+                        whiteMoves = !whiteMoves;
+                        return true;
+                    }
+                }
+                else
+                {
+                    movements[id]++;
+                    whiteMoves = !whiteMoves;
+                    return true;
+                }
+            }
         }
         else if(id == 2 || id == 5)// Bishop
         {
-
+            if(sqrtf((x-lastX)*(x-lastX)+(y-lastY)*(y-lastY)) > 1 && positive(x-lastX) == positive(y-lastY))
+            {
+                int tmpc = 1;
+                if(x < lastX && y < lastY)
+                {
+                    while(tmpc < lastX-x)
+                    {
+                        if(figurAt(x + tmpc, y + tmpc) != -1)
+                        {
+                            return false;
+                        }
+                        tmpc++;
+                    }
+                }
+                else if(x < lastX && y > lastY)
+                {
+                    while(tmpc < lastX-x)
+                    {
+                        if(figurAt(x + tmpc, y - tmpc) != -1)
+                        {
+                            return false;
+                        }
+                        tmpc++;
+                    }
+                }
+                else if(x > lastX && y > lastY)
+                {
+                    while(tmpc < x-lastX)
+                    {
+                        if(figurAt(x - tmpc, y - tmpc) != -1)
+                        {
+                            return false;
+                        }
+                        tmpc++;
+                    }
+                }
+                else if(x > lastX && y < lastY)
+                {
+                    while(tmpc < x-lastX)
+                    {
+                        if(figurAt(x - tmpc, y + tmpc) != -1)
+                        {
+                            return false;
+                        }
+                        tmpc++;
+                    }
+                }
+                
+                if(target != -1)
+                {
+                    if(target >= 16)
+                    {
+                        alive[target] = false;
+                        lastPositions[target].x = 50*target-800;
+                        lastPositions[target].y = 925;
+                        window->getComponent(target)->setPosition(50*target-800, 925);
+                        movements[id]++;
+                        whiteMoves = !whiteMoves;
+                        return true;
+                    }
+                }
+                else
+                {
+                    movements[id]++;
+                    whiteMoves = !whiteMoves;
+                    return true;
+                }
+            }
         }
         else if(id == 3) //           Queen
         {
+            if(sqrtf((x-lastX)*(x-lastX)+(y-lastY)*(y-lastY)) >= 1 && (positive(x-lastX) == positive(y-lastY) || x == lastX || y == lastY))
+            {
 
+                int tmpcx = 1;
+                int tmpcy = 1;
+                if(x == lastX)
+                {
+                    tmpcx = 0;
+                }
+                if(y == lastY)
+                {
+                    tmpcy = 0;
+                }
+                if(x <= lastX && y <= lastY)
+                {
+                    while(tmpcx < lastX-x || tmpcy < lastY-y)
+                    {
+                        if(figurAt(x + tmpcx, y + tmpcy) != -1)
+                        {
+                            return false;
+                        }
+                        if(tmpcx > 0)
+                        {
+                            tmpcx++;
+                        }
+                        if(tmpcy > 0)
+                        {
+                            tmpcy++;
+                        }
+                    }
+                }
+                else if(x <= lastX && y >= lastY)
+                {
+                    while(tmpcx < lastX-x || tmpcy < y-lastY)
+                    {
+                        if(figurAt(x + tmpcx, y - tmpcy) != -1)
+                        {
+                            return false;
+                        }
+                        if(tmpcx > 0)
+                        {
+                            tmpcx++;
+                        }
+                        if(tmpcy > 0)
+                        {
+                            tmpcy++;
+                        }
+                    }
+                }
+                else if(x >= lastX && y >= lastY)
+                {
+                    while(tmpcx < x-lastX || tmpcy < y-lastY)
+                    {
+                        if(figurAt(x - tmpcx, y - tmpcy) != -1)
+                        {
+                            return false;
+                        }
+                        if(tmpcx > 0)
+                        {
+                            tmpcx++;
+                        }
+                        if(tmpcy > 0)
+                        {
+                            tmpcy++;
+                        }
+                    }
+                }
+                else if(x >= lastX && y <= lastY)
+                {
+                    while(tmpcx < x-lastX || tmpcy < lastY-y)
+                    {
+                        if(figurAt(x - tmpcx, y + tmpcy) != -1)
+                        {
+                            return false;
+                        }
+                        if(tmpcx > 0)
+                        {
+                            tmpcx++;
+                        }
+                        if(tmpcy > 0)
+                        {
+                            tmpcy++;
+                        }
+                    }
+                }
+
+                if(target != -1)
+                {
+                    if(target >= 16)
+                    {
+                        alive[target] = false;
+                        lastPositions[target].x = 50*target-800;
+                        lastPositions[target].y = 925;
+                        window->getComponent(target)->setPosition(50*target-800, 925);
+                        movements[id]++;
+                        whiteMoves = !whiteMoves;
+                        return true;
+                    }
+                }
+                else
+                {
+                    movements[id]++;
+                    whiteMoves = !whiteMoves;
+                    return true;
+                }
+            }
         }
-        else //                       King
+        else if(sqrtf((x-lastX)*(x-lastX)+(y-lastY)*(y-lastY)) >= 1)//                       King
         {
-
+            if(sqrtf((x-lastX)*(x-lastX)+(y-lastY)*(y-lastY)) < 2)
+            {
+                if(target != -1)
+                {
+                    if(target >= 16)
+                    {
+                        alive[target] = false;
+                        lastPositions[target].x = 50*target-800;
+                        lastPositions[target].y = 925;
+                        window->getComponent(target)->setPosition(50*target-800, 925);
+                        movements[id]++;
+                        whiteMoves = !whiteMoves;
+                        return true;
+                    }
+                }
+                else
+                {
+                    movements[id]++;
+                    whiteMoves = !whiteMoves;
+                    return true;
+                }
+            }
         }
     }
     else if(id < 32 && !whiteMoves) // Black figures
@@ -185,7 +408,7 @@ bool isValidMove(int id, int x, int y, int lastX, int lastY, LGUI::Window* windo
         {
             if(x == lastX || y == lastY)
             {
-                if(sqrtf((x-lastX)*(x-lastX)+(y-lastY)*(y-lastY)) > 1)
+                if(sqrtf((x-lastX)*(x-lastX)+(y-lastY)*(y-lastY)) >= 1)
                 {
                     if(x == lastX)
                     {
@@ -267,19 +490,232 @@ bool isValidMove(int id, int x, int y, int lastX, int lastY, LGUI::Window* windo
         }
         else if(id == 25 || id == 30)// Knight
         {
-
+            if(positive(x-lastX) == 1 && positive(y-lastY) == 2 || positive(y-lastY) == 1 && positive(x-lastX) == 2 )
+            {
+                if(target != -1)
+                {
+                    if(target < 16)
+                    {
+                        alive[target] = false;
+                        lastPositions[target].x = 50*target-300;
+                        lastPositions[target].y = 25;
+                        window->getComponent(target)->setPosition(50*target-300, 25);
+                        movements[id]++;
+                        whiteMoves = !whiteMoves;
+                        return true;
+                    }
+                }
+                else
+                {
+                    movements[id]++;
+                    whiteMoves = !whiteMoves;
+                    return true;
+                }
+            }
         }
         else if(id == 26 || id == 29)// Bishop
         {
-
+            if(sqrtf((x-lastX)*(x-lastX)+(y-lastY)*(y-lastY)) > 1 && positive(x-lastX) == positive(y-lastY))
+            {
+                int tmpc = 1;
+                if(x < lastX && y < lastY)
+                {
+                    while(tmpc < lastX-x)
+                    {
+                        if(figurAt(x + tmpc, y + tmpc) != -1)
+                        {
+                            return false;
+                        }
+                        tmpc++;
+                    }
+                }
+                else if(x < lastX && y > lastY)
+                {
+                    while(tmpc < lastX-x)
+                    {
+                        if(figurAt(x + tmpc, y - tmpc) != -1)
+                        {
+                            return false;
+                        }
+                        tmpc++;
+                    }
+                }
+                else if(x > lastX && y > lastY)
+                {
+                    while(tmpc < x-lastX)
+                    {
+                        if(figurAt(x - tmpc, y - tmpc) != -1)
+                        {
+                            return false;
+                        }
+                        tmpc++;
+                    }
+                }
+                else if(x > lastX && y < lastY)
+                {
+                    while(tmpc < x-lastX)
+                    {
+                        if(figurAt(x - tmpc, y + tmpc) != -1)
+                        {
+                            return false;
+                        }
+                        tmpc++;
+                    }
+                }
+                if(target != -1)
+                {
+                    if(target < 16)
+                    {
+                        alive[target] = false;
+                        lastPositions[target].x = 50*target-300;
+                        lastPositions[target].y = 25;
+                        window->getComponent(target)->setPosition(50*target-300, 25);
+                        movements[id]++;
+                        whiteMoves = !whiteMoves;
+                        return true;
+                    }
+                }
+                else
+                {
+                    movements[id]++;
+                    whiteMoves = !whiteMoves;
+                    return true;
+                }
+            }
         }
         else if(id == 28) //            Queen
         {
+            if(sqrtf((x-lastX)*(x-lastX)+(y-lastY)*(y-lastY)) >= 1 && (positive(x-lastX) == positive(y-lastY) || x == lastX || y == lastY))
+            {
 
+                int tmpcx = 1;
+                int tmpcy = 1;
+                if(x == lastX)
+                {
+                    tmpcx = 0;
+                }
+                if(y == lastY)
+                {
+                    tmpcy = 0;
+                }
+                if(x <= lastX && y <= lastY)
+                {
+                    while(tmpcx < lastX-x || tmpcy < lastY-y)
+                    {
+                        if(figurAt(x + tmpcx, y + tmpcy) != -1)
+                        {
+                            return false;
+                        }
+                        if(tmpcx > 0)
+                        {
+                            tmpcx++;
+                        }
+                        if(tmpcy > 0)
+                        {
+                            tmpcy++;
+                        }
+                    }
+                }
+                else if(x <= lastX && y >= lastY)
+                {
+                    while(tmpcx < lastX-x || tmpcy < y-lastY)
+                    {
+                        if(figurAt(x + tmpcx, y - tmpcy) != -1)
+                        {
+                            return false;
+                        }
+                        if(tmpcx > 0)
+                        {
+                            tmpcx++;
+                        }
+                        if(tmpcy > 0)
+                        {
+                            tmpcy++;
+                        }
+                    }
+                }
+                else if(x >= lastX && y >= lastY)
+                {
+                    while(tmpcx < x-lastX || tmpcy < y-lastY)
+                    {
+                        if(figurAt(x - tmpcx, y - tmpcy) != -1)
+                        {
+                            return false;
+                        }
+                        if(tmpcx > 0)
+                        {
+                            tmpcx++;
+                        }
+                        if(tmpcy > 0)
+                        {
+                            tmpcy++;
+                        }
+                    }
+                }
+                else if(x >= lastX && y <= lastY)
+                {
+                    while(tmpcx < x-lastX || tmpcy < lastY-y)
+                    {
+                        if(figurAt(x - tmpcx, y + tmpcy) != -1)
+                        {
+                            return false;
+                        }
+                        if(tmpcx > 0)
+                        {
+                            tmpcx++;
+                        }
+                        if(tmpcy > 0)
+                        {
+                            tmpcy++;
+                        }
+                    }
+                }
+
+                if(target != -1)
+                {
+                    if(target < 16)
+                    {
+                        alive[target] = false;
+                        lastPositions[target].x = 50*target-300;
+                        lastPositions[target].y = 25;
+                        window->getComponent(target)->setPosition(50*target-300, 25);
+                        movements[id]++;
+                        whiteMoves = !whiteMoves;
+                        return true;
+                    }
+                }
+                else
+                {
+                    movements[id]++;
+                    whiteMoves = !whiteMoves;
+                    return true;
+                }
+            }
         }
-        else //                         King
+        else if(sqrtf((x-lastX)*(x-lastX)+(y-lastY)*(y-lastY)) >= 1)//                       King
         {
-
+            if(sqrtf((x-lastX)*(x-lastX)+(y-lastY)*(y-lastY)) < 2)
+            {
+                if(target != -1)
+                {
+                    if(target < 16)
+                    {
+                        alive[target] = false;
+                        lastPositions[target].x = 50*target-300;
+                        lastPositions[target].y = 25;
+                        window->getComponent(target)->setPosition(50*target-300, 25);
+                        movements[id]++;
+                        whiteMoves = !whiteMoves;
+                        return true;
+                    }
+                }
+                else
+                {
+                    movements[id]++;
+                    whiteMoves = !whiteMoves;
+                    return true;
+                }
+            }
         }
     }
     return false;

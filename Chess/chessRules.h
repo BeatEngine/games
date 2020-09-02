@@ -750,6 +750,10 @@ bool isValidMove(int id, int x, int y, int lastX, int lastY, LGUI::Window* windo
     {
         return false;
     }
+    if(x > 8 || y > 8)
+    {
+        return false;
+    }
     if(id>=8 && id < 16 && y < lastY && whiteMoves) //Pawn (bottom) forward
     {
         int target = figurAt(x, y);

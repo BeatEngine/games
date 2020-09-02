@@ -53,7 +53,7 @@ namespace LGUI
             }
             renderer = SDL_CreateRenderer(window, -1, 0);
             framedelay = 1000/fps;
-            setColor(255, 255, 255, 255);
+            setBackgroundColor(RGBA(255, 255, 255, 255));
             clearBackground();
             updateScreen();
             startedAt = clock();
@@ -89,11 +89,11 @@ namespace LGUI
                 if(typeid(*components.at(i)) == typeid(RadioGroup))
                 {
                     std::vector<RadioBox*> inner = ((RadioGroup*)components.at(i))->getControlls();
-                    for(int i = 0; i < inner.size(); i++)
+                    for(int u = 0; u < inner.size(); u++)
                     {
-                        if(inner.at(i)->getId() == id)
+                        if(inner.at(u)->getId() == id)
                         {
-                            return inner.at(i);
+                            return inner.at(u);
                         }
                     }
                 }
@@ -113,15 +113,15 @@ namespace LGUI
                 if(typeid(*components.at(i)) == typeid(RadioGroup))
                 {
                     std::vector<RadioBox*> inner = ((RadioGroup*)components.at(i))->getControlls();
-                    for(int i = 0; i < inner.size(); i++)
+                    for(int u = 0; u < inner.size(); u++)
                     {
-                        if(inner.at(i)->rectIsInBorders(area))
+                        if(inner.at(u)->rectIsInBorders(area))
                         {
-                            results.push_back(inner.at(i));
+                            results.push_back(inner.at(u));
                         }
                     }
                 }
-                if(components.at(i)->rectIsInBorders(area))
+                else if(components.at(i)->rectIsInBorders(area))
                 {
                     results.push_back(components.at(i));
                 }

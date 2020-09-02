@@ -327,7 +327,7 @@ int main(int args, char** arg)
     std::string title = "Light GUI - Chess (by BeatEngine®)";
     LGUI::Window window(title, 1000, 1000, true);
 
-
+    window.setResizable(true);
     LGUI::RadioBox* PVP = new LGUI::RadioBox(100, 50, 6, "Player vs. Player", LGUI::RGBA(200, 200, 200, 255), LGUI::RGBA(0, 0, 0, 255), &window, 12);
     LGUI::RadioBox* PVC = new LGUI::RadioBox(100, 80, 6, "Player vs. Computer", LGUI::RGBA(200, 200, 200, 255), LGUI::RGBA(0, 0, 0, 255), &window, 12);
     PVP->setSelected(true);
@@ -355,7 +355,6 @@ int main(int args, char** arg)
     radioGroupSide->setId(541);
 
     std::string abso = "./";
-    abso = "/home/david/Dokumente/SDL-Projects/Chess/";
     
     LGUI::Sprite* background = new LGUI::Sprite(100,100,800,800,LGUI::RGBA(0,0,0,0), &window, abso + "res/background.png");
     background->setLayer(0);

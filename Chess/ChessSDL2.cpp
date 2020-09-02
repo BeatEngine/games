@@ -1,725 +1,17 @@
 
 #include "SDLLightGUI.h"
 
+#include "chessRules.h"
+
 LGUI::Sprite* pawnsWhite[8];
 LGUI::Sprite* figuresWhite[8];
 LGUI::Sprite* pawnsBlack[8];
 LGUI::Sprite* figuresBlack[8];
 
-SDL_Point lastPositions[32] = {0};
+bool computerActive = false;
+bool computerSideBlack = true;
 
-bool alive[32] = {1};
 
-int movements[32] = {0};
-
-bool whiteMoves = true;
-
-int figurAt(int x, int y)
-{
-    for(int i = 0; i < 32; i++)
-    {
-        if(lastPositions[i].x/100 == x && lastPositions[i].y/100 == y)
-        {
-            return i;
-        }
-    }
-    return -1;
-}
-
-inline static int positive(int x)
-{
-    if(x < 0)
-    {
-        return -x;
-    }
-    return x;
-}
-
-bool isValidMove(int id, int x, int y, int lastX, int lastY, LGUI::Window* window)
-{
-    if(id>=8 && id < 16 && y < lastY && whiteMoves) //Pawn (bottom) forward
-    {
-        int target = figurAt(x, y);
-        if(target != -1)
-        {
-            if(target >= 16 && (x-1 == lastX || x+1 == lastX)) //Enemy front left or right
-            {
-                alive[target] = false;
-                lastPositions[target].x = 50*target-800;
-                lastPositions[target].y = 925;
-                window->getComponent(target)->setPosition(50*target-800, 925);
-                movements[id]++;
-                whiteMoves = !whiteMoves;
-                return true;
-            }
-        }
-        else if(x == lastX && (movements[id] == 0 && y >= lastY - 2 || y >= lastY - 1))
-        {
-            movements[id]++;
-            whiteMoves = !whiteMoves;
-            return true;
-        }
-    }
-    else if(id>=16 && id < 24 && y > lastY &&!whiteMoves) //Pawn (top) forward
-    {
-        int target = figurAt(x, y);
-        if(target != -1)
-        {
-            if(target < 16 && (x-1 == lastX || x+1 == lastX)) //Enemy front left or right
-            {
-                alive[target] = false;
-                lastPositions[target].x = 50*target-300;
-                lastPositions[target].y = 25;
-                window->getComponent(target)->setPosition(50*target-300, 25);
-                movements[id]++;
-                whiteMoves = !whiteMoves;
-                return true;
-            }
-        }
-        else if(x == lastX && (movements[id] == 0 && y <= lastY + 2 || y <= lastY + 1))
-        {
-            movements[id]++;
-            whiteMoves = !whiteMoves;
-            return true;
-        }
-    }
-    else if(id >= 0 && id < 8 && whiteMoves) // White figures
-    {
-        int target = figurAt(x, y);
-        if(id == 0 || id == 7)//      Rook
-        {
-            if(x == lastX || y == lastY)
-            {
-                if(sqrtf((x-lastX)*(x-lastX)+(y-lastY)*(y-lastY)) >= 1)
-                {
-                    if(x == lastX)
-                    {
-                        int tmpc = y;
-                        if(y < lastY)
-                        {
-                            tmpc++;
-                            while (tmpc != lastY && tmpc != y)
-                            {
-                                if(figurAt(x, tmpc) != -1)
-                                {
-                                    return false;
-                                }
-                                tmpc++;
-                            }
-                        }
-                        else
-                        {
-                            tmpc--;
-                            while (tmpc != lastY && tmpc != y)
-                            {
-                                if(figurAt(x, tmpc) != -1)
-                                {
-                                    return false;
-                                }
-                                tmpc--;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        int tmpc = x;
-                        if(x < lastX)
-                        {
-                            tmpc++;
-                            while (tmpc != lastX && tmpc != x)
-                            {
-                                if(figurAt(tmpc, y) != -1)
-                                {
-                                    return false;
-                                }
-                                tmpc++;
-                            }
-                        }
-                        else
-                        {
-                            tmpc--;
-                            while (tmpc != lastX && tmpc != x)
-                            {
-                                if(figurAt(tmpc, y) != -1)
-                                {
-                                    return false;
-                                }
-                                tmpc--;
-                            }
-                        }
-                    }
-                }
-                if(target != -1)
-                {
-                    if(target >= 16)
-                    {
-                        alive[target] = false;
-                        lastPositions[target].x = 50*target-800;
-                        lastPositions[target].y = 925;
-                        window->getComponent(target)->setPosition(50*target-800, 925);
-                        movements[id]++;
-                        whiteMoves = !whiteMoves;
-                        return true;
-                    }
-                }
-                else
-                {
-                    movements[id]++;
-                    whiteMoves = !whiteMoves;
-                    return true;
-                }
-            }
-        }
-        else if(id == 1 || id == 6)// Knight
-        {
-            if(positive(x-lastX) == 1 && positive(y-lastY) == 2 || positive(y-lastY) == 1 && positive(x-lastX) == 2 )
-            {
-                if(target != -1)
-                {
-                    if(target >= 16)
-                    {
-                        alive[target] = false;
-                        lastPositions[target].x = 50*target-800;
-                        lastPositions[target].y = 925;
-                        window->getComponent(target)->setPosition(50*target-800, 925);
-                        movements[id]++;
-                        whiteMoves = !whiteMoves;
-                        return true;
-                    }
-                }
-                else
-                {
-                    movements[id]++;
-                    whiteMoves = !whiteMoves;
-                    return true;
-                }
-            }
-        }
-        else if(id == 2 || id == 5)// Bishop
-        {
-            if(sqrtf((x-lastX)*(x-lastX)+(y-lastY)*(y-lastY)) > 1 && positive(x-lastX) == positive(y-lastY))
-            {
-                int tmpc = 1;
-                if(x < lastX && y < lastY)
-                {
-                    while(tmpc < lastX-x)
-                    {
-                        if(figurAt(x + tmpc, y + tmpc) != -1)
-                        {
-                            return false;
-                        }
-                        tmpc++;
-                    }
-                }
-                else if(x < lastX && y > lastY)
-                {
-                    while(tmpc < lastX-x)
-                    {
-                        if(figurAt(x + tmpc, y - tmpc) != -1)
-                        {
-                            return false;
-                        }
-                        tmpc++;
-                    }
-                }
-                else if(x > lastX && y > lastY)
-                {
-                    while(tmpc < x-lastX)
-                    {
-                        if(figurAt(x - tmpc, y - tmpc) != -1)
-                        {
-                            return false;
-                        }
-                        tmpc++;
-                    }
-                }
-                else if(x > lastX && y < lastY)
-                {
-                    while(tmpc < x-lastX)
-                    {
-                        if(figurAt(x - tmpc, y + tmpc) != -1)
-                        {
-                            return false;
-                        }
-                        tmpc++;
-                    }
-                }
-                
-                if(target != -1)
-                {
-                    if(target >= 16)
-                    {
-                        alive[target] = false;
-                        lastPositions[target].x = 50*target-800;
-                        lastPositions[target].y = 925;
-                        window->getComponent(target)->setPosition(50*target-800, 925);
-                        movements[id]++;
-                        whiteMoves = !whiteMoves;
-                        return true;
-                    }
-                }
-                else
-                {
-                    movements[id]++;
-                    whiteMoves = !whiteMoves;
-                    return true;
-                }
-            }
-        }
-        else if(id == 3) //           Queen
-        {
-            if(sqrtf((x-lastX)*(x-lastX)+(y-lastY)*(y-lastY)) >= 1 && (positive(x-lastX) == positive(y-lastY) || x == lastX || y == lastY))
-            {
-
-                int tmpcx = 1;
-                int tmpcy = 1;
-                if(x == lastX)
-                {
-                    tmpcx = 0;
-                }
-                if(y == lastY)
-                {
-                    tmpcy = 0;
-                }
-                if(x <= lastX && y <= lastY)
-                {
-                    while(tmpcx < lastX-x || tmpcy < lastY-y)
-                    {
-                        if(figurAt(x + tmpcx, y + tmpcy) != -1)
-                        {
-                            return false;
-                        }
-                        if(tmpcx > 0)
-                        {
-                            tmpcx++;
-                        }
-                        if(tmpcy > 0)
-                        {
-                            tmpcy++;
-                        }
-                    }
-                }
-                else if(x <= lastX && y >= lastY)
-                {
-                    while(tmpcx < lastX-x || tmpcy < y-lastY)
-                    {
-                        if(figurAt(x + tmpcx, y - tmpcy) != -1)
-                        {
-                            return false;
-                        }
-                        if(tmpcx > 0)
-                        {
-                            tmpcx++;
-                        }
-                        if(tmpcy > 0)
-                        {
-                            tmpcy++;
-                        }
-                    }
-                }
-                else if(x >= lastX && y >= lastY)
-                {
-                    while(tmpcx < x-lastX || tmpcy < y-lastY)
-                    {
-                        if(figurAt(x - tmpcx, y - tmpcy) != -1)
-                        {
-                            return false;
-                        }
-                        if(tmpcx > 0)
-                        {
-                            tmpcx++;
-                        }
-                        if(tmpcy > 0)
-                        {
-                            tmpcy++;
-                        }
-                    }
-                }
-                else if(x >= lastX && y <= lastY)
-                {
-                    while(tmpcx < x-lastX || tmpcy < lastY-y)
-                    {
-                        if(figurAt(x - tmpcx, y + tmpcy) != -1)
-                        {
-                            return false;
-                        }
-                        if(tmpcx > 0)
-                        {
-                            tmpcx++;
-                        }
-                        if(tmpcy > 0)
-                        {
-                            tmpcy++;
-                        }
-                    }
-                }
-
-                if(target != -1)
-                {
-                    if(target >= 16)
-                    {
-                        alive[target] = false;
-                        lastPositions[target].x = 50*target-800;
-                        lastPositions[target].y = 925;
-                        window->getComponent(target)->setPosition(50*target-800, 925);
-                        movements[id]++;
-                        whiteMoves = !whiteMoves;
-                        return true;
-                    }
-                }
-                else
-                {
-                    movements[id]++;
-                    whiteMoves = !whiteMoves;
-                    return true;
-                }
-            }
-        }
-        else if(sqrtf((x-lastX)*(x-lastX)+(y-lastY)*(y-lastY)) >= 1)//                       King
-        {
-            if(sqrtf((x-lastX)*(x-lastX)+(y-lastY)*(y-lastY)) < 2)
-            {
-                if(target != -1)
-                {
-                    if(target >= 16)
-                    {
-                        alive[target] = false;
-                        lastPositions[target].x = 50*target-800;
-                        lastPositions[target].y = 925;
-                        window->getComponent(target)->setPosition(50*target-800, 925);
-                        movements[id]++;
-                        whiteMoves = !whiteMoves;
-                        return true;
-                    }
-                }
-                else
-                {
-                    movements[id]++;
-                    whiteMoves = !whiteMoves;
-                    return true;
-                }
-            }
-        }
-    }
-    else if(id < 32 && !whiteMoves) // Black figures
-    {
-        int target = figurAt(x, y);
-        if(id == 24 || id == 31)//      Rook
-        {
-            if(x == lastX || y == lastY)
-            {
-                if(sqrtf((x-lastX)*(x-lastX)+(y-lastY)*(y-lastY)) >= 1)
-                {
-                    if(x == lastX)
-                    {
-                        int tmpc = y;
-                        if(y < lastY)
-                        {
-                            tmpc++;
-                            while (tmpc != lastY && tmpc != y)
-                            {
-                                if(figurAt(x, tmpc) != -1)
-                                {
-                                    return false;
-                                }
-                                tmpc++;
-                            }
-                        }
-                        else
-                        {
-                            tmpc--;
-                            while (tmpc != lastY && tmpc != y)
-                            {
-                                if(figurAt(x, tmpc) != -1)
-                                {
-                                    return false;
-                                }
-                                tmpc--;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        int tmpc = x;
-                        if(x < lastX)
-                        {
-                            tmpc++;
-                            while (tmpc != lastX && tmpc != x)
-                            {
-                                if(figurAt(tmpc, y) != -1)
-                                {
-                                    return false;
-                                }
-                                tmpc++;
-                            }
-                        }
-                        else
-                        {
-                            tmpc--;
-                            while (tmpc != lastX && tmpc != x)
-                            {
-                                if(figurAt(tmpc, y) != -1)
-                                {
-                                    return false;
-                                }
-                                tmpc--;
-                            }
-                        }
-                    }
-                }
-                if(target != -1)
-                {
-                    if(target < 16)
-                    {
-                        alive[target] = false;
-                        lastPositions[target].x = 50*target-300;
-                        lastPositions[target].y = 25;
-                        window->getComponent(target)->setPosition(50*target-300, 25);
-                        movements[id]++;
-                        whiteMoves = !whiteMoves;
-                        return true;
-                    }
-                }
-                else
-                {
-                    movements[id]++;
-                    whiteMoves = !whiteMoves;
-                    return true;
-                }
-            }
-        }
-        else if(id == 25 || id == 30)// Knight
-        {
-            if(positive(x-lastX) == 1 && positive(y-lastY) == 2 || positive(y-lastY) == 1 && positive(x-lastX) == 2 )
-            {
-                if(target != -1)
-                {
-                    if(target < 16)
-                    {
-                        alive[target] = false;
-                        lastPositions[target].x = 50*target-300;
-                        lastPositions[target].y = 25;
-                        window->getComponent(target)->setPosition(50*target-300, 25);
-                        movements[id]++;
-                        whiteMoves = !whiteMoves;
-                        return true;
-                    }
-                }
-                else
-                {
-                    movements[id]++;
-                    whiteMoves = !whiteMoves;
-                    return true;
-                }
-            }
-        }
-        else if(id == 26 || id == 29)// Bishop
-        {
-            if(sqrtf((x-lastX)*(x-lastX)+(y-lastY)*(y-lastY)) > 1 && positive(x-lastX) == positive(y-lastY))
-            {
-                int tmpc = 1;
-                if(x < lastX && y < lastY)
-                {
-                    while(tmpc < lastX-x)
-                    {
-                        if(figurAt(x + tmpc, y + tmpc) != -1)
-                        {
-                            return false;
-                        }
-                        tmpc++;
-                    }
-                }
-                else if(x < lastX && y > lastY)
-                {
-                    while(tmpc < lastX-x)
-                    {
-                        if(figurAt(x + tmpc, y - tmpc) != -1)
-                        {
-                            return false;
-                        }
-                        tmpc++;
-                    }
-                }
-                else if(x > lastX && y > lastY)
-                {
-                    while(tmpc < x-lastX)
-                    {
-                        if(figurAt(x - tmpc, y - tmpc) != -1)
-                        {
-                            return false;
-                        }
-                        tmpc++;
-                    }
-                }
-                else if(x > lastX && y < lastY)
-                {
-                    while(tmpc < x-lastX)
-                    {
-                        if(figurAt(x - tmpc, y + tmpc) != -1)
-                        {
-                            return false;
-                        }
-                        tmpc++;
-                    }
-                }
-                if(target != -1)
-                {
-                    if(target < 16)
-                    {
-                        alive[target] = false;
-                        lastPositions[target].x = 50*target-300;
-                        lastPositions[target].y = 25;
-                        window->getComponent(target)->setPosition(50*target-300, 25);
-                        movements[id]++;
-                        whiteMoves = !whiteMoves;
-                        return true;
-                    }
-                }
-                else
-                {
-                    movements[id]++;
-                    whiteMoves = !whiteMoves;
-                    return true;
-                }
-            }
-        }
-        else if(id == 28) //            Queen
-        {
-            if(sqrtf((x-lastX)*(x-lastX)+(y-lastY)*(y-lastY)) >= 1 && (positive(x-lastX) == positive(y-lastY) || x == lastX || y == lastY))
-            {
-
-                int tmpcx = 1;
-                int tmpcy = 1;
-                if(x == lastX)
-                {
-                    tmpcx = 0;
-                }
-                if(y == lastY)
-                {
-                    tmpcy = 0;
-                }
-                if(x <= lastX && y <= lastY)
-                {
-                    while(tmpcx < lastX-x || tmpcy < lastY-y)
-                    {
-                        if(figurAt(x + tmpcx, y + tmpcy) != -1)
-                        {
-                            return false;
-                        }
-                        if(tmpcx > 0)
-                        {
-                            tmpcx++;
-                        }
-                        if(tmpcy > 0)
-                        {
-                            tmpcy++;
-                        }
-                    }
-                }
-                else if(x <= lastX && y >= lastY)
-                {
-                    while(tmpcx < lastX-x || tmpcy < y-lastY)
-                    {
-                        if(figurAt(x + tmpcx, y - tmpcy) != -1)
-                        {
-                            return false;
-                        }
-                        if(tmpcx > 0)
-                        {
-                            tmpcx++;
-                        }
-                        if(tmpcy > 0)
-                        {
-                            tmpcy++;
-                        }
-                    }
-                }
-                else if(x >= lastX && y >= lastY)
-                {
-                    while(tmpcx < x-lastX || tmpcy < y-lastY)
-                    {
-                        if(figurAt(x - tmpcx, y - tmpcy) != -1)
-                        {
-                            return false;
-                        }
-                        if(tmpcx > 0)
-                        {
-                            tmpcx++;
-                        }
-                        if(tmpcy > 0)
-                        {
-                            tmpcy++;
-                        }
-                    }
-                }
-                else if(x >= lastX && y <= lastY)
-                {
-                    while(tmpcx < x-lastX || tmpcy < lastY-y)
-                    {
-                        if(figurAt(x - tmpcx, y + tmpcy) != -1)
-                        {
-                            return false;
-                        }
-                        if(tmpcx > 0)
-                        {
-                            tmpcx++;
-                        }
-                        if(tmpcy > 0)
-                        {
-                            tmpcy++;
-                        }
-                    }
-                }
-
-                if(target != -1)
-                {
-                    if(target < 16)
-                    {
-                        alive[target] = false;
-                        lastPositions[target].x = 50*target-300;
-                        lastPositions[target].y = 25;
-                        window->getComponent(target)->setPosition(50*target-300, 25);
-                        movements[id]++;
-                        whiteMoves = !whiteMoves;
-                        return true;
-                    }
-                }
-                else
-                {
-                    movements[id]++;
-                    whiteMoves = !whiteMoves;
-                    return true;
-                }
-            }
-        }
-        else if(sqrtf((x-lastX)*(x-lastX)+(y-lastY)*(y-lastY)) >= 1)//                       King
-        {
-            if(sqrtf((x-lastX)*(x-lastX)+(y-lastY)*(y-lastY)) < 2)
-            {
-                if(target != -1)
-                {
-                    if(target < 16)
-                    {
-                        alive[target] = false;
-                        lastPositions[target].x = 50*target-300;
-                        lastPositions[target].y = 25;
-                        window->getComponent(target)->setPosition(50*target-300, 25);
-                        movements[id]++;
-                        whiteMoves = !whiteMoves;
-                        return true;
-                    }
-                }
-                else
-                {
-                    movements[id]++;
-                    whiteMoves = !whiteMoves;
-                    return true;
-                }
-            }
-        }
-    }
-    return false;
-}
 
 void figureToGrid(void** params)
 {
@@ -733,15 +25,22 @@ void figureToGrid(void** params)
         int h = pos.y/100;
 
 
-        if(isValidMove(sprite->getId(), w, h, lastPositions[sprite->getId()].x/100, lastPositions[sprite->getId()].y/100, window) && pos.x + 20 < 900 && pos.y + 20 < 900)
+        if(pos.x + 20 < 900 && pos.y + 20 < 900 && isValidMove(sprite->getId(), w, h, lastPositions[sprite->getId()].x/100, lastPositions[sprite->getId()].y/100, window, false))
         {
-            if(sprite->getId() >= 8 && sprite->getId() < 24 )
+            if(isValidMove(sprite->getId(), w, h, lastPositions[sprite->getId()].x/100, lastPositions[sprite->getId()].y/100, window, true))
             {
-                sprite->setPosition(7 + w*100, h*100, false, window);
+                if(sprite->getId() >= 8 && sprite->getId() < 24 )
+                {
+                    sprite->setPosition(7 + w*100, h*100, false, window);
+                }
+                else
+                {
+                    sprite->setPosition(w*100, h*100, false, window);
+                }
             }
             else
             {
-                sprite->setPosition(w*100, h*100, false, window);
+                sprite->setPosition(lastPositions[sprite->getId()].x, lastPositions[sprite->getId()].y, true, window);
             }
         }
         else
@@ -777,8 +76,29 @@ void moveFigure(void** params)
 
 void resetGame(void** params)
 {
-    whiteMoves = true;
     LGUI::Window* window = (LGUI::Window*)params[0];
+    LGUI::RadioBox* computerChoose = (LGUI::RadioBox*)window->getComponent(531);
+    LGUI::RadioBox* playerChoose = (LGUI::RadioBox*)window->getComponent(530);
+    if(computerChoose)
+    {
+        LGUI::RadioBox* boxWhite = (LGUI::RadioBox*)window->getComponent(601);
+        LGUI::RadioBox* boxBlack = (LGUI::RadioBox*)window->getComponent(602);
+        boxWhite->setEnabled(false);
+        boxWhite->setHidden(true);
+        boxBlack->setEnabled(false);
+        boxBlack->setHidden(true);
+        boxWhite->setSelected(false);
+        boxBlack->setSelected(true);
+        computerActive = false;
+        computerChoose->setSelected(false);
+    }
+    computerActive = false;
+    whiteMoves = true;
+    if(playerChoose)
+    {
+        playerChoose->setSelected(true);
+    }
+    
     for(int i = 0; i < 8; i++)
     {
         pawnsWhite[i]->setPosition(107 + i*100,700,false);
@@ -789,13 +109,151 @@ void resetGame(void** params)
         pawnsBlack[i]->setBorder(LGUI::RGBA(0,0,0,255), 0);
         figuresBlack[i]->setPosition(100 + i*100,100,false);
         figuresBlack[i]->setBorder(LGUI::RGBA(0,0,0,255), 0);
+        lastPositions[i].x = figuresWhite[i]->getPosition().x;
+        lastPositions[i].y = figuresWhite[i]->getPosition().y;
+        lastPositions[i+16].x = pawnsBlack[i]->getPosition().x;
+        lastPositions[i+16].y = pawnsBlack[i]->getPosition().y;
+        lastPositions[i+8].x = pawnsWhite[i]->getPosition().x;
+        lastPositions[i+8].y = pawnsWhite[i]->getPosition().y;
+        lastPositions[i+24].x = figuresBlack[i]->getPosition().x;
+        lastPositions[i+24].y = figuresBlack[i]->getPosition().y;
     }
     for(int i = 0; i < 32; i++)
     {
         alive[i] = true;
-        movements[i] = 0;
-        lastPositions[i].x = window->getComponent(i)->getPosition().x;
-        lastPositions[i].y = window->getComponent(i)->getPosition().y;
+        movements[i] = 0;  
+    }
+}
+
+void choseComputerWhite(void** params)
+{
+    computerSideBlack = false;
+}
+
+void choseComputerBlack(void** params)
+{
+    computerSideBlack = true;
+}
+
+void choseComputerEnemy(void** params)
+{
+    LGUI::Window* window = (LGUI::Window*)params[0];
+    LGUI::RadioBox* computerChoose = (LGUI::RadioBox*)window->getComponent(531);
+    if(computerChoose)
+    {
+        LGUI::RadioBox* boxWhite = (LGUI::RadioBox*)window->getComponent(601);
+        LGUI::RadioBox* boxBlack = (LGUI::RadioBox*)window->getComponent(602);
+        if(computerChoose->isSelected() && params[1] == computerChoose)
+        {
+            boxWhite->setEnabled(true);
+            boxWhite->setHidden(false);
+            boxBlack->setEnabled(true);
+            boxBlack->setHidden(false);
+            computerActive = true;
+            computerSideBlack = true;
+        }
+        else
+        {
+            boxWhite->setEnabled(false);
+            boxWhite->setHidden(true);
+            boxBlack->setEnabled(false);
+            boxBlack->setHidden(true);
+            computerActive = false;
+            computerSideBlack = true;
+        }
+    }
+}
+
+struct ChessMove
+{
+    int id;
+    int x;
+    int y;
+    float value;
+};
+
+bool cmpcmovs(ChessMove& a, ChessMove& b)
+{
+    if(a.value == b.value)
+    {
+        if(a.id < 16)
+        {
+            return a.id > b.id;
+        }
+        else
+        {
+            return a.id < b.id;
+        }
+    }
+    return a.value > b.value;
+}
+
+
+
+
+void computerPlayerTasks(LGUI::Window* window)
+{
+    if(computerActive && (computerSideBlack && !whiteMoves || !computerSideBlack && whiteMoves))
+    {
+        std::vector<ChessMove> moves;
+        if(computerSideBlack)
+        {
+            std::vector<SDL_Point> validPositions;
+            for(int i = 16; i < 32; i++)
+            {
+                validPositions = validMoves(i, lastPositions[i].x/100, lastPositions[i].y/100, window);
+                for(int p = 0; p < validPositions.size(); p++)
+                {
+                    ChessMove m;
+                    m.id = i;
+                    m.x  = validPositions[i].x;
+                    m.y  = validPositions[i].y;
+                    m.value = valueOfMove(i, validPositions[i].x, validPositions[i].y, lastPositions[i].x/100, lastPositions[i].y/100, window);
+                    moves.push_back(m);
+                }
+            }
+        }
+        else
+        {
+            std::vector<SDL_Point> validPositions;
+            for(int i = 0; i < 10; i++)
+            {
+                validPositions = validMoves(i, lastPositions[i].x/100, lastPositions[i].y/100, window);
+                for(int p = 0; p < validPositions.size(); p++)
+                {
+                    ChessMove m;
+                    m.id = i;
+                    m.x  = validPositions[i].x;
+                    m.y  = validPositions[i].y;
+                    m.value = valueOfMove(i, validPositions[i].x, validPositions[i].y, lastPositions[i].x/100, lastPositions[i].y/100, window);
+                    moves.push_back(m);
+                }
+            }
+        }
+        if(moves.size()>0)
+        {
+            for(int i = 0; i < moves.size(); i++)
+            {
+                if(moves[i].value <= -100000)
+                {
+                    moves.erase(moves.begin()+i);
+                    i--;
+                }
+            }
+            if(moves.size()>0)
+            {
+                std::sort(moves.begin(), moves.end(), cmpcmovs);
+                printf("%s", nameOfFigure(moves[0].id));
+                printf(" moves from %c%c to %c%c\n", 'a'+ moves[0].x/100, '1'+7-moves[0].y/100, 'a'+ lastPositions[moves[0].id].x/100,'1'+ 7-lastPositions[moves[0].id].y/100);
+                bool error = !isValidMove(moves[0].id, moves[0].x, moves[0].y, lastPositions[moves[0].id].x/100, lastPositions[moves[0].id].y/100, window, true);
+                if(error)
+                {
+                    printf("Invalid move!\n");
+                    int dbg = 0;
+                    dbg = 1;
+                }
+            }
+        }
     }
 }
 
@@ -803,6 +261,33 @@ int main(int args, char** arg)
 {
     std::string title = "Light GUI - Chess (by BeatEngine®)";
     LGUI::Window window(title, 1000, 1000, true);
+
+
+    LGUI::RadioBox* PVP = new LGUI::RadioBox(100, 50, 6, "Player vs. Player", LGUI::RGBA(200, 200, 200, 255), LGUI::RGBA(0, 0, 0, 255), &window, 12);
+    LGUI::RadioBox* PVC = new LGUI::RadioBox(100, 80, 6, "Player vs. Computer", LGUI::RGBA(200, 200, 200, 255), LGUI::RGBA(0, 0, 0, 255), &window, 12);
+    PVP->setSelected(true);
+    PVP->setId(530);
+    PVC->setId(531);
+    LGUI::RadioBox* radios[] = {PVP, PVC, 0};
+    PVC->setOnLeftClick(choseComputerEnemy);
+    PVP->setOnLeftClick(choseComputerEnemy);
+    LGUI::RadioGroup* radioGroup = new LGUI::RadioGroup(radios);
+    radioGroup->setId(540);
+    LGUI::RadioBox* CBS = new LGUI::RadioBox(250, 50, 6, "Player is White", LGUI::RGBA(200, 200, 200, 255), LGUI::RGBA(0, 0, 0, 255), &window, 12);
+    LGUI::RadioBox* CWS = new LGUI::RadioBox(250, 80, 6, "Player is Black", LGUI::RGBA(200, 200, 200, 255), LGUI::RGBA(0, 0, 0, 255), &window, 12);
+    CBS->setSelected(true);
+    CBS->setEnabled(false);
+    CBS->setHidden(true);
+    CBS->setOnLeftClick(choseComputerBlack);
+    CWS->setEnabled(false);
+    CWS->setHidden(true);
+    CWS->setOnLeftClick(choseComputerWhite);
+    CWS->setId(601);
+    CBS->setId(602);
+    LGUI::RadioBox* radiosSide[] = {CBS, CWS, 0};
+
+    LGUI::RadioGroup* radioGroupSide = new LGUI::RadioGroup(radiosSide);
+    radioGroupSide->setId(541);
 
     std::string abso = "./";
     abso = "/home/david/Dokumente/SDL-Projects/Chess/";
@@ -844,14 +329,14 @@ int main(int args, char** arg)
     window.addComponent(resetButton);
     for(int i = 0; i < 8; i++)
     {
-        pawnsWhite[i] = new LGUI::Sprite(100, 100,50,50,LGUI::RGBA(0,0,0,255),&window, "/home/david/Dokumente/SDL-Projects/Chess/res/white/pawn.png");
+        pawnsWhite[i] = new LGUI::Sprite(100, 100,50,50,LGUI::RGBA(0,0,0,255),&window, abso + "res/white/pawn.png");
         pawnsWhite[i]->setPosition(107 + i*100,700,false);
         pawnsWhite[i]->setBorder(LGUI::RGBA(0,0,0,255), 0);
         pawnsWhite[i]->setId(i+8);
         figuresWhite[i]->setPosition(100 + i*100,800,false);
         figuresWhite[i]->setBorder(LGUI::RGBA(0,0,0,255), 0);
         figuresWhite[i]->setId(i);
-        pawnsBlack[i] = new LGUI::Sprite(100, 100,50,50,LGUI::RGBA(0,0,0,255),&window, "/home/david/Dokumente/SDL-Projects/Chess/res/black/pawn.png");
+        pawnsBlack[i] = new LGUI::Sprite(100, 100,50,50,LGUI::RGBA(0,0,0,255),&window, abso + "res/black/pawn.png");
         pawnsBlack[i]->setPosition(107 + i*100,200,false);
         pawnsBlack[i]->setBorder(LGUI::RGBA(0,0,0,255), 0);
         pawnsBlack[i]->setId(i+16);
@@ -876,8 +361,12 @@ int main(int args, char** arg)
 
     window.setBackgroundColor(LGUI::RGBA(100, 100, 100, 0));
 
+    window.addComponent(radioGroup);
+    window.addComponent(radioGroupSide);
+
     while (window.update()) //window main loop
     {
+        computerPlayerTasks(&window);
         if(whiteMoves)
         {
             window.setBackgroundColor(LGUI::RGBA(160, 160, 160, 0));

@@ -107,7 +107,7 @@ float valueOfFigure(int id)
         }
         else //                        King
         {
-            return 0;
+            return 1000;
         }
     }else if(id < 16)
     {
@@ -133,7 +133,7 @@ float valueOfFigure(int id)
         }
         else //                        King
         {
-            return 0;
+            return -1000;
         }
     }
     else

@@ -11,7 +11,14 @@ LGUI::Sprite* figuresBlack[8];
 bool computerActive = false;
 bool computerSideBlack = true;
 
+int scaleFactorX = 100;
+int scaleFactorY = 100;
 
+int oldScaleX = 100;
+int oldScaleY = 100;
+
+int WindowHight = 1000;
+int WindowWidth = 1000;
 
 void figureToGrid(void** params)
 {
@@ -21,22 +28,24 @@ void figureToGrid(void** params)
     if(sprite->getLastMouseX() >= 120 && sprite->getLastMouseY() >= 120)
     {
         SDL_Rect pos = sprite->getPosition();
-        int w = pos.x/100;
-        int h = pos.y/100;
 
+        float quadFact = 1.23-0.23*(100/(float)scaleFactorX);
 
-        if(pos.x + 20 < 900 && pos.y + 20 < 900 && isValidMove(sprite->getId(), w, h, lastPositions[sprite->getId()].x/100, lastPositions[sprite->getId()].y/100, window, false))
+        int w = (pos.x-100)/(quadFact*scaleFactorX)+1;
+        int h = (pos.y-100)/(quadFact*scaleFactorY)+1;
+        // /*pos.x + scaleFactorX*0.2 < 100+quadFact*scaleFactorX*8 && pos.y + scaleFactorY*0.2 < 100+quadFact*scaleFactorY*8 && */
+        if(isValidMove(sprite->getId(), w, h, (int)((lastPositions[sprite->getId()].x-100)/(quadFact*oldScaleX)+1), (int)((lastPositions[sprite->getId()].y-100)/(quadFact*oldScaleY)+1), window, false))
         {
-            printf("Move %s (%d|%d)-->(%d|%d) from %c%c to %c%c \n", nameOfFigure(sprite->getId()), lastPositions[sprite->getId()].x/100, lastPositions[sprite->getId()].y/100, w, h, 'a' + lastPositions[sprite->getId()].x/100-1,'0' + 9-lastPositions[sprite->getId()].y/100, 'a' + w-1,'0' + 9-h);
-            if(isValidMove(sprite->getId(), w, h, lastPositions[sprite->getId()].x/100, lastPositions[sprite->getId()].y/100, window, true))
+            printf("Move %s (%d|%d)-->(%d|%d) from %c%c to %c%c \n", nameOfFigure(sprite->getId()), (int)((lastPositions[sprite->getId()].x-100)/(quadFact*oldScaleX)+1), (int)((lastPositions[sprite->getId()].y-100)/(quadFact*oldScaleY)+1), w, h, 'a' + (char)((lastPositions[sprite->getId()].x-100)/(quadFact*oldScaleX)+1-1),'0' + 9-(char)((lastPositions[sprite->getId()].y-100)/(quadFact*oldScaleY)+1), 'a' + w-1,'0' + 9-h);
+            if(isValidMove(sprite->getId(), w, h, (int)((lastPositions[sprite->getId()].x-100)/(quadFact*oldScaleX)+1), (int)((lastPositions[sprite->getId()].y-100)/(quadFact*oldScaleY)+1), window, true))
             {
                 if(sprite->getId() >= 8 && sprite->getId() < 24 )
                 {
-                    sprite->setPosition(7 + w*100, h*100, false, window);
+                    sprite->setPosition(7 + w*quadFact*scaleFactorX, h*quadFact*scaleFactorY, false, window);
                 }
                 else
                 {
-                    sprite->setPosition(w*100, h*100, false, window);
+                    sprite->setPosition(w*quadFact*scaleFactorX, h*quadFact*scaleFactorY, false, window);
                 }
             }
             else
@@ -46,11 +55,11 @@ void figureToGrid(void** params)
         }
         else
         {
+            //printf("Invalid Move %s (%d|%d)-->(%d|%d) from %c%c to %c%c \n", nameOfFigure(sprite->getId()), (int)((lastPositions[sprite->getId()].x-100)/(quadFact*oldScaleX)+1), (int)((lastPositions[sprite->getId()].y-100)/(quadFact*oldScaleY)+1), w, h, 'a' + (char)((lastPositions[sprite->getId()].x-100)/(quadFact*oldScaleX)+1-1),'0' + 9-(char)((lastPositions[sprite->getId()].y-100)/(quadFact*oldScaleY)+1), 'a' + w-1,'0' + 9-h);
             sprite->setPosition(lastPositions[sprite->getId()].x, lastPositions[sprite->getId()].y, true, window);
         }
         lastPositions[sprite->getId()].x = sprite->getPosition().x;
         lastPositions[sprite->getId()].y = sprite->getPosition().y;
-        //sprite->setLastCursorPosition(pos.x, pos.y);
     }
 }
 
@@ -59,16 +68,16 @@ void moveFigure(void** params)
     LGUI::Sprite* sprite = (LGUI::Sprite*)params[1];
     LGUI::Window* window = (LGUI::Window*)params[0];
     SDL_Event* motionEvent = (SDL_Event*)params[2];
-    if(sprite->isLeftButtonDown() && sprite->getLastMouseX() > 135 && sprite->getLastMouseY() > 135)
+    if(sprite->isLeftButtonDown() && sprite->getLastMouseX() > scaleFactorX+35 && sprite->getLastMouseY() > scaleFactorY+35)
     {
         int mx = motionEvent->motion.x - sprite->getLastMouseX();
         int my = motionEvent->motion.y - sprite->getLastMouseY();
         SDL_Rect pos = sprite->getPosition();
         pos.x += mx;
         pos.y += my;
-        if(pos.x + 35 < 900 && pos.y + 35 < 900)
+        if(pos.x + 35 < scaleFactorX*9 && pos.y + 35 < scaleFactorY*9)
         {
-            sprite->setPosition(pos.x, pos.y, window);
+            sprite->setPosition(pos.x, pos.y, true, window);
         }
         //sprite->setLastCursorPosition(pos.x, pos.y);
     }
@@ -99,16 +108,20 @@ void resetGame(void** params)
     {
         playerChoose->setSelected(true);
     }
-    
+    float quadFact = 1.23-0.23*(100/(float)scaleFactorX);
     for(int i = 0; i < 8; i++)
     {
-        pawnsWhite[i]->setPosition(107 + i*100,700,false);
+        pawnsWhite[i]->setPosition(100 + quadFact*scaleFactorX*0.07 + i*quadFact*scaleFactorX,100+6*quadFact*scaleFactorY,false);
+        pawnsWhite[i]->setSize(quadFact*scaleFactorX/2, quadFact*scaleFactorY/2);
         pawnsWhite[i]->setBorder(LGUI::RGBA(0,0,0,255), 0);
-        figuresWhite[i]->setPosition(100 + i*100,800,false);
+        figuresWhite[i]->setPosition(100 + i*quadFact*scaleFactorX,100+7*quadFact*scaleFactorY,false);
+        figuresWhite[i]->setSize(quadFact*scaleFactorX/2, quadFact*scaleFactorY/2);
         figuresWhite[i]->setBorder(LGUI::RGBA(0,0,0,255), 0);
-        pawnsBlack[i]->setPosition(107 + i*100,200,false);
+        pawnsBlack[i]->setPosition(100 + quadFact*scaleFactorX*0.07 + i*quadFact*scaleFactorX,100+1*quadFact*scaleFactorY,false);
+        pawnsBlack[i]->setSize(quadFact*scaleFactorX/2, quadFact*scaleFactorY/2);
         pawnsBlack[i]->setBorder(LGUI::RGBA(0,0,0,255), 0);
-        figuresBlack[i]->setPosition(100 + i*100,100,false);
+        figuresBlack[i]->setPosition(100 + i*quadFact*scaleFactorX,100,false);
+        figuresBlack[i]->setSize(quadFact*scaleFactorX/2, quadFact*scaleFactorY/2);
         figuresBlack[i]->setBorder(LGUI::RGBA(0,0,0,255), 0);
         lastPositions[i].x = figuresWhite[i]->getPosition().x;
         lastPositions[i].y = figuresWhite[i]->getPosition().y;
@@ -207,15 +220,60 @@ void artificicialEnemy(LGUI::Window* window)
             {
                 for(int x = 0; x < 32; x++)
                 {
-                    if(isValidMove(id, x, y, lastPositions[id].x / 100, lastPositions[id].y / 100, window, false))
+                    if(isValidMove(id, x, y, lastPositions[id].x / scaleFactorX, lastPositions[id].y / scaleFactorY, window, false))
                     {
                         ChessMove tmp;
                         tmp.id = id;
                         tmp.x = x;
                         tmp.y = y;
-                        tmp.value = valueOfMove(id, x, y, lastPositions[id].x / 100, lastPositions[id].y / 100, window);
+                        tmp.value = valueOfMove(id, x, y, lastPositions[id].x / scaleFactorX, lastPositions[id].y / scaleFactorY, window);
                         if(tmp.value > -100000)
                         {
+                            int tlx = lastPositions[id].x;
+                            int tly = lastPositions[id].y;
+                            int tlx2;
+                            int tly2;
+                            int tid = figurAt(x, y);
+                            if(tid != -1)
+                            {
+                                tlx2 = lastPositions[tid].x;
+                                tly2 = lastPositions[tid].y;
+                                lastPositions[tid].x = -500;
+                                lastPositions[tid].y = -500;
+                            }
+                            lastPositions[id].x = scaleFactorX*x;
+                            lastPositions[id].y = scaleFactorY*y;
+                            whiteMoves = !whiteMoves;
+                            if(a == 0)
+                            {
+                                for(int e = 16; e < 32; e++)
+                                {
+                                    if(isValidMove(e, x, y, lastPositions[e].x/scaleFactorX, lastPositions[e].y/scaleFactorY, window, false))
+                                    {
+                                        tmp.value -= positive(valueOfFigure(tmp.id));
+                                        break;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                for(int e = 0; e < 16; e++)
+                                {
+                                    if(isValidMove(e, x, y, lastPositions[e].x/scaleFactorX, lastPositions[e].y/scaleFactorY, window, false))
+                                    {
+                                        tmp.value -= positive(valueOfFigure(tmp.id));
+                                        break;
+                                    }
+                                }
+                            }
+                            whiteMoves = !whiteMoves;
+                            lastPositions[id].x = tlx;
+                            lastPositions[id].y = tly;
+                            if(tid != -1)
+                            {
+                                lastPositions[tid].x = tlx2;
+                                lastPositions[tid].y = tly2;
+                            }
                             moves.push_back(tmp);
                         }
                     }
@@ -233,19 +291,19 @@ void artificicialEnemy(LGUI::Window* window)
                     max = moves[i];
                 }
             }
-            printf("Move %s (%d|%d)-->(%d|%d) from %c%c to %c%c \n", nameOfFigure(max.id), lastPositions[max.id].x/100, lastPositions[max.id].y/100, max.x, max.y, 'a' + lastPositions[max.id].x/100-1,'0' + 9-lastPositions[max.id].y/100, 'a' + max.x-1,'0' + 9-max.y);
-            if(isValidMove(max.id, max.x, max.y, lastPositions[max.id].x/100, lastPositions[max.id].y/100,window, true))
+            printf("Move %s(%d) (%d|%d)-->(%d|%d) from %c%c to %c%c \n", nameOfFigure(max.id), max.id, lastPositions[max.id].x/scaleFactorX, lastPositions[max.id].y/scaleFactorY, max.x, max.y, 'a' + lastPositions[max.id].x/scaleFactorX-1,'0' + 9-lastPositions[max.id].y/scaleFactorY, 'a' + max.x-1,'0' + 9-max.y);
+            if(isValidMove(max.id, max.x, max.y, lastPositions[max.id].x/scaleFactorX, lastPositions[max.id].y/scaleFactorY,window, true))
             {
                 //printf("Error computer tried invalid move!\n");
             }
             LGUI::Sprite* sprite = (LGUI::Sprite*)window->getComponent(max.id);
             if(sprite->getId() >= 8 && sprite->getId() < 24 )
             {
-                sprite->setPosition(7 + max.x*100, max.y*100, false, window);
+                sprite->setPosition(7 + max.x*scaleFactorX, max.y*scaleFactorY, false, window);
             }
             else
             {
-                sprite->setPosition(max.x*100, max.y*100, false, window);
+                sprite->setPosition(max.x*scaleFactorX, max.y*scaleFactorY, false, window);
             }
             lastPositions[sprite->getId()].x = sprite->getPosition().x;
             lastPositions[sprite->getId()].y = sprite->getPosition().y;
@@ -257,69 +315,6 @@ void artificicialEnemy(LGUI::Window* window)
 void computerPlayerTasks(LGUI::Window* window)
 {
     artificicialEnemy(window);
-    /*
-    if(computerActive && (computerSideBlack && !whiteMoves || !computerSideBlack && whiteMoves))
-    {
-        std::vector<ChessMove> moves;
-        if(computerSideBlack)
-        {
-            std::vector<SDL_Point> validPositions;
-            for(int i = 16; i < 32; i++)
-            {
-                validPositions = validMoves(i, lastPositions[i].x/100, lastPositions[i].y/100, window);
-                for(int p = 0; p < validPositions.size(); p++)
-                {
-                    ChessMove m;
-                    m.id = i;
-                    m.x  = validPositions[i].x;
-                    m.y  = validPositions[i].y;
-                    m.value = valueOfMove(i, validPositions[i].x, validPositions[i].y, lastPositions[i].x/100, lastPositions[i].y/100, window);
-                    moves.push_back(m);
-                }
-            }
-        }
-        else
-        {
-            std::vector<SDL_Point> validPositions;
-            for(int i = 0; i < 10; i++)
-            {
-                validPositions = validMoves(i, lastPositions[i].x/100, lastPositions[i].y/100, window);
-                for(int p = 0; p < validPositions.size(); p++)
-                {
-                    ChessMove m;
-                    m.id = i;
-                    m.x  = validPositions[i].x;
-                    m.y  = validPositions[i].y;
-                    m.value = valueOfMove(i, validPositions[i].x, validPositions[i].y, lastPositions[i].x/100, lastPositions[i].y/100, window);
-                    moves.push_back(m);
-                }
-            }
-        }
-        if(moves.size()>0)
-        {
-            for(int i = 0; i < moves.size(); i++)
-            {
-                if(moves[i].value <= -100000)
-                {
-                    moves.erase(moves.begin()+i);
-                    i--;
-                }
-            }
-            if(moves.size()>0)
-            {
-                std::sort(moves.begin(), moves.end(), cmpcmovs);
-                printf("%s", nameOfFigure(moves[0].id));
-                printf(" moves from %c%c to %c%c\n", 'a'+ moves[0].x/100, '1'+7-moves[0].y/100, 'a'+ lastPositions[moves[0].id].x/100,'1'+ 7-lastPositions[moves[0].id].y/100);
-                bool error = !isValidMove(moves[0].id, moves[0].x, moves[0].y, lastPositions[moves[0].id].x/100, lastPositions[moves[0].id].y/100, window, true);
-                if(error)
-                {
-                    printf("Invalid move!\n");
-                    int dbg = 0;
-                    dbg = 1;
-                }
-            }
-        }
-    }*/
 }
 
 int main(int args, char** arg)
@@ -356,6 +351,7 @@ int main(int args, char** arg)
 
     std::string abso = "./";
     
+    
     LGUI::Sprite* background = new LGUI::Sprite(100,100,800,800,LGUI::RGBA(0,0,0,0), &window, abso + "res/background.png");
     background->setLayer(0);
     
@@ -377,7 +373,6 @@ int main(int args, char** arg)
     figuresBlack[6] = new LGUI::Sprite(100, 100,50,50,LGUI::RGBA(0,0,0,255),&window, abso + "res/black/knight.png");
     figuresBlack[7] = new LGUI::Sprite(100, 100,50,50,LGUI::RGBA(0,0,0,255),&window, abso + "res/black/rook.png");
     
-
     LGUI::ScrollBox* box = new LGUI::ScrollBox(100,100,800,800,LGUI::RGBA(0, 0, 0, 0), LGUI::RGBA(0, 0, 0, 255), &window);
 
     box->setLayer(1);
@@ -430,6 +425,41 @@ int main(int args, char** arg)
 
     while (window.update()) //window main loop
     {
+        int w = window.getRect().w;
+        int h = window.getRect().h;
+
+        if(w != WindowWidth || h != WindowHight)
+        {
+            int W, H;
+            float mx, my;
+            oldScaleX = scaleFactorX;
+            oldScaleY = scaleFactorY;
+            if(w<h)
+            {
+                mx = (float)w/WindowWidth;
+                my = (float)w/WindowWidth;
+                W = WindowWidth * (float)w/WindowWidth;
+                H = WindowHight * (float)w/WindowHight;
+                scaleFactorX = (int)(100*(float)w/1000);
+                scaleFactorY = (int)(100*(float)w/1000);
+            }
+            else
+            {
+                mx = (float)h/WindowWidth;
+                my = (float)h/WindowWidth;
+                W = WindowWidth * (float)h/WindowWidth;
+                H = WindowHight * (float)h/WindowHight;
+                scaleFactorX = (int)(100*(float)h/1000);
+                scaleFactorY = (int)(100*(float)h/1000);
+            }
+            box->setSize(W-200, H-200);
+            background->setSize(W-200, H-200);
+            WindowWidth = window.getRect().w;
+            WindowHight = window.getRect().h;
+            resetGame((void**)(&wptr));
+
+        }
+
         computerPlayerTasks(&window);
         if(whiteMoves)
         {

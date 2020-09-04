@@ -184,6 +184,7 @@ struct ChessMove
     int x;
     int y;
     float value;
+    bool urgent;
 };
 
 bool cmpcmovs(ChessMove& a, ChessMove& b)
@@ -227,8 +228,62 @@ void artificicialEnemy(LGUI::Window* window)
                         tmp.x = x;
                         tmp.y = y;
                         tmp.value = valueOfMove(id, x, y, lastPositions[id].x / scaleFactorX, lastPositions[id].y / scaleFactorY, window);
+                        tmp.urgent = false;
                         if(tmp.value > -100000)
                         {
+                            bool endangered = false;
+                            bool secure = false;
+                            bool wouldBeSecure = false;
+                            for(int ff = a; ff < b; ff++)
+                            {
+                                if(ff != id)
+                                {
+                                    if(isValidMove(ff, x, y, lastPositions[ff].x / scaleFactorX, lastPositions[ff].y / scaleFactorY, window, false))
+                                    {
+                                        wouldBeSecure = true;
+                                        break;
+                                    }
+                                    if(isValidMove(ff, lastPositions[id].x / scaleFactorX, lastPositions[id].y / scaleFactorY, lastPositions[ff].x / scaleFactorX, lastPositions[ff].y / scaleFactorY, window, false))
+                                    {
+                                        secure = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            whiteMoves = !whiteMoves;
+                            if(a == 0)
+                            {
+                                for(int ef = 16; ef < 32; ef++)
+                                {
+                                    if(isValidMove(ef, lastPositions[id].x / scaleFactorX, lastPositions[id].y / scaleFactorY, lastPositions[ef].x / scaleFactorX, lastPositions[ef].y / scaleFactorY, window, false))
+                                    {
+                                        endangered = (valueOfFigure(ef) <= valueOfFigure(id));
+                                        break;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                for(int ef = 0; ef < 16; ef++)
+                                {
+                                    if(isValidMove(ef, lastPositions[id].x / scaleFactorX, lastPositions[id].y / scaleFactorY, lastPositions[ef].x / scaleFactorX, lastPositions[ef].y / scaleFactorY, window, false))
+                                    {
+                                        endangered = endangered = (valueOfFigure(ef) <= valueOfFigure(id));
+                                        break;
+                                    }
+                                }
+                            }
+                            
+
+                            if(wouldBeSecure)
+                            {
+                                if(!secure)
+                                {
+                                    tmp.value += 1;
+                                }
+                                tmp.value += 1;
+                            }
+
                             int tlx = lastPositions[id].x;
                             int tly = lastPositions[id].y;
                             int tlx2;
@@ -243,14 +298,22 @@ void artificicialEnemy(LGUI::Window* window)
                             }
                             lastPositions[id].x = scaleFactorX*x;
                             lastPositions[id].y = scaleFactorY*y;
-                            whiteMoves = !whiteMoves;
+                            
                             if(a == 0)
                             {
                                 for(int e = 16; e < 32; e++)
                                 {
                                     if(isValidMove(e, x, y, lastPositions[e].x/scaleFactorX, lastPositions[e].y/scaleFactorY, window, false))
                                     {
-                                        tmp.value -= positive(valueOfFigure(tmp.id));
+                                        if(!endangered || secure)
+                                        {
+                                            tmp.value -= positive(valueOfFigure(tmp.id));
+                                        }
+                                        else
+                                        {
+                                            tmp.urgent = true;
+                                            tmp.value += positive(valueOfFigure(tmp.id));
+                                        }
                                         break;
                                     }
                                 }
@@ -261,7 +324,15 @@ void artificicialEnemy(LGUI::Window* window)
                                 {
                                     if(isValidMove(e, x, y, lastPositions[e].x/scaleFactorX, lastPositions[e].y/scaleFactorY, window, false))
                                     {
-                                        tmp.value -= positive(valueOfFigure(tmp.id));
+                                        if(!endangered || secure)
+                                        {
+                                            tmp.value -= positive(valueOfFigure(tmp.id));
+                                        }
+                                        else
+                                        {
+                                            tmp.urgent = true;
+                                            tmp.value += positive(valueOfFigure(tmp.id));
+                                        }
                                         break;
                                     }
                                 }
@@ -286,7 +357,7 @@ void artificicialEnemy(LGUI::Window* window)
             max.value = -1000000.0f;
             for(int i = 0; i < moves.size(); i++)
             {
-                if(moves[i].value > max.value)
+                if(moves[i].value > max.value || (moves[i].urgent == true && max.urgent == false))
                 {
                     max = moves[i];
                 }
